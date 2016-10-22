@@ -44,26 +44,28 @@ export default class Home extends Component {
 
         <section id="features">
           <div className="container">
-            <h2>deck.gl is a WebGL-powered framework for visual exploratory data analysis of large datasets.</h2>
-            <hr className="short" />
+            <div>
+              <h2>deck.gl is a WebGL-powered framework for visual exploratory data analysis of large datasets.</h2>
+              <hr className="short" />
 
-            <h3>A Layered Approach to Visualization</h3>
-            <p>Based on the notion of layers and instancing deck.gl is suitable to reason about and display data, perform
-            on-the-fly aggregations and visually explore large datasets.
-            </p>
+              <h3>A Layered Approach to Visualization</h3>
+              <p>Based on the notion of layers and instancing deck.gl is suitable to reason about and display data, perform
+              on-the-fly aggregations and visually explore large datasets.
+              </p>
 
-            <h3>High-precision computations in the GPU</h3>
-            <p>By emulating float64 computations in the GPU we support rendering datasets with unparalleled accuracy and performance.
-            </p>
+              <h3>High-precision computations in the GPU</h3>
+              <p>By emulating float64 computations in the GPU we support rendering datasets with unparalleled accuracy and performance.
+              </p>
 
-            <h3>Robust Architecture</h3>
-            <p>deck.gl is built using the latest JavaScript standards, including ES2016 and a rich ecosystem of libraries and settings that enable easy debugging and profiling of WebGL applications.
-            </p>
+              <h3>Robust Architecture</h3>
+              <p>deck.gl is built using the latest JavaScript standards, including ES2016 and a rich ecosystem of libraries and settings that enable easy debugging and profiling of WebGL applications.
+              </p>
 
-            <h3>Interoperability with Mapbox</h3>
-            <p>
-            deck.gl is interoperable with MapboxGL-js. We coordinate with Mapbox's camera system to provide compelling 2D and 3D visualizations on top of Mapbox's camera system.
-            </p>
+              <h3>Interoperability with Mapbox</h3>
+              <p>
+              deck.gl is interoperable with MapboxGL-js. We coordinate with Mapbox's camera system to provide compelling 2D and 3D visualizations on top of Mapbox's camera system.
+              </p>
+            </div>
           </div>
           <div className="image" />
         </section>
