@@ -10,9 +10,6 @@ import * as Demos from './demos';
 import * as appActions from '../actions/app-actions';
 import {MAPBOX_ACCESS_TOKEN, MAPBOX_STYLES} from '../constants/defaults';
 
-const DEMO_TAB = 0;
-const CONTENT_TAB = 1;
-
 function animate() {
   TWEEN.update();
   requestAnimationFrame(animate);
@@ -23,8 +20,7 @@ class Page extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      tab: DEMO_TAB,
-      ...this._loadTabs(props.route.tabs)
+      ...this._loadContent(props.route.content)
     };
   }
 
@@ -37,14 +33,16 @@ class Page extends Component {
     const {route} = nextProps;
     if (this.props.route !== route) {
       this.setState({
-        tab: DEMO_TAB,
-        ...this._loadTabs(route.tabs)
+        ...this._loadContent(route.content)
       });
     }
   }
 
-  _loadTabs(tabs) {
-    const {demo, content} = tabs;
+  _loadContent(content) {
+    if (typeof content === 'string') {
+      content = {content};
+    }
+    const {demo, ...docs} = content;
     const {viewport, loadData, useParams, updateMap, loadContent} = this.props;
     const DemoComponent = Demos[demo];
 
@@ -74,11 +72,13 @@ class Page extends Component {
         })
         .start();
     }
-    loadContent(content);
+
+    // grab text contents
+    Object.values(docs).forEach(url => loadContent(url));
 
     return {
-      ...tabs,
-      demo: DemoComponent ? demo : null
+      activeTab: ('demo' in content) ? 'demo' : Object.keys(content)[0],
+      tabs: content
     };
   }
 
@@ -93,7 +93,7 @@ class Page extends Component {
 
   _renderMap() {
     const {viewport, app: {params, owner, data}} = this.props;
-    const {demo} = this.state;
+    const {tabs: {demo}} = this.state;
     const DemoComponent = Demos[demo];
     const dataLoaded = owner === demo ? data : null;
 
@@ -113,7 +113,7 @@ class Page extends Component {
 
   _renderOptions() {
     const {app: {params, owner, meta}} = this.props;
-    const {demo} = this.state;
+    const {tabs: {demo}} = this.state;
     const DemoComponent = Demos[demo];
     const metaLoaded = owner === demo ? meta : {};
 
@@ -131,49 +131,57 @@ class Page extends Component {
     );
   }
 
-  _renderTabContent() {
-    const {tab, content, demo} = this.state;
+  _renderTabContent(tabName, tab) {
     const {contents} = this.props;
-    const markdown = <MarkdownPage content={contents[content]} />
+    const {activeTab, tabs} = this.state;
 
-    if (!demo) {
-      return markdown;
-    }
+    return Object.keys(tabs).map(tabName => {
+      const tab = tabs[tabName];
+      let child;
 
-    return (
-      <div>
-        <div className={`tab ${tab === DEMO_TAB ? 'active' : ''}`}>
-          { this._renderMap() }
-          { this._renderOptions() }
+      if (tabName === 'demo') {
+        child = (
+          <div>
+            { this._renderMap() }
+            { this._renderOptions() }
+          </div>
+        )
+      } else {
+        child = <MarkdownPage content={contents[tab]} />;
+      }
+
+      return (
+        <div key={tabName} className={`tab ${tabName === activeTab ? 'active' : ''}`}>
+          { child }
         </div>
-        <div className={`tab ${tab === CONTENT_TAB ? 'active' : ''}`}>
-          { markdown }
-        </div>
-      </div>
-    );
+      );
+    });
   }
 
   _renderTabs() {
-    const {tab} = this.state;
+    const {activeTab, tabs} = this.state;
+
     return (
       <ul className="tabs">
-        <li className={`${tab === DEMO_TAB ? 'active' : ''}`}>
-          <button onClick={ () => this.setState({tab: DEMO_TAB}) }>Demo</button>
-        </li>
-        <li className={`${tab === CONTENT_TAB ? 'active' : ''}`}>
-          <button onClick={ () => this.setState({tab: CONTENT_TAB}) }>Code</button>
-        </li>
+        {
+          Object.keys(tabs).map(tabName => (
+            <li key={tabName} className={`${tabName === activeTab ? 'active' : ''}`}>
+              <button onClick={ () => this.setState({activeTab: tabName}) }>
+                { tabName }
+              </button>
+            </li>
+          ))
+        }
       </ul>
     );
   }
 
   render() {
-    const {routes: [parentRoute]} = this.props;
-    const {demo} = this.state;
+    const {tabs} = this.state;
 
     return (
       <div className="page">
-        { demo && this._renderTabs() }
+        { Object.keys(tabs).length > 1 && this._renderTabs() }
         { this._renderTabContent() }
       </div>
     );

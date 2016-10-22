@@ -48,7 +48,7 @@ export default class Home extends Component {
             <hr className="short" />
 
             <h3>A Layered Approach to Visualization</h3>
-            <p>Based on the notion of layers and instancing deck.gl is suitable to reason about and display data, perform 
+            <p>Based on the notion of layers and instancing deck.gl is suitable to reason about and display data, perform
             on-the-fly aggregations and visually explore large datasets.
             </p>
 
@@ -65,6 +65,7 @@ export default class Home extends Component {
             deck.gl is interoperable with MapboxGL-js. We coordinate with Mapbox's camera system to provide compelling 2D and 3D visualizations on top of Mapbox's camera system.
             </p>
           </div>
+          <div className="image" />
         </section>
 
         <hr />

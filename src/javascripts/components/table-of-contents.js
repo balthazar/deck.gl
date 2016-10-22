@@ -3,73 +3,40 @@ import React, {Component, PropTypes} from 'react';
 import {Link} from 'react-router'
 
 export default class TableOfContents extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      groups: this._getGroups(props.pages)
-    };
-  }
 
-  componentWillReceiveProps(nextProps) {
-    const {pages} = nextProps;
-    if (this.props.pages !== pages) {
-      this.setState({groups: this._getGroups(pages)});
+  _renderPage(parentRoute, page, i) {
+    const {children, name} = page;
+    const path = `${parentRoute}/${page.path}`;
+
+    if (children) {
+      return [
+        (
+          <Link className="list-header" activeClassName="active"
+              key={`group-header${i}`} to={path}>
+            { name }
+          </Link>
+        ), (
+          <ul key={`group-list${i}`} style={{maxHeight: `${40 * children.length}px`}}>
+            { children.map(this._renderPage.bind(this, path)) }
+          </ul>
+        )
+      ];
     }
-  }
-
-  _getGroups(pages) {
-    if (!pages) {
-      return [];
-    }
-
-    const groups = [];
-
-    pages.forEach(page => {
-      const {groupName} = page;
-      let group = groups[groups.length - 1];
-      if (!group || group.name !== groupName) {
-        group = {
-          name: groupName,
-          pages: []
-        };
-        groups.push(group);
-      }
-      group.pages.push(page);
-    });
-
-    return groups;
-  }
-
-  _renderLink(page, i) {
     return (
-      <li key={i}>
-        <Link to={ `${this.props.parentRoute}/${page.path}` } activeClassName="active">
-          { page.displayName }
-        </Link>
+      <li key={`page-${i}`}>
+        <Link className="link" to={ path } activeClassName="active">{ page.name }</Link>
       </li>
     );
   }
 
-  _renderGroup(group, i) {
-    return [
-      (
-        <h4 key={`group-header${i}`}>
-          { group.name }
-        </h4>
-      ), (
-        <ul key={`group-list${i}`}>
-          { group.pages.map(this._renderLink.bind(this)) }
-        </ul>
-      )
-    ];
-  }
-
   render() {
-    const {groups} = this.state;
+    const {pages, parentRoute} = this.props;
 
     return (
       <div className="toc">
-        { groups.map(this._renderGroup.bind(this)) }
+        <div>
+          { pages.map(this._renderPage.bind(this, parentRoute)) }
+        </div>
       </div>
     )
   }

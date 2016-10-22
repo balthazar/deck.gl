@@ -7,7 +7,7 @@ $secondary: #05E3D5;
 $black: #041725;
 $black-20: #213746;
 $black-40: #5A666D;
-$white: #EFEFEF;
+$white: #EDEDED;
 $white-40: #8D9BA3;
 
 @import 'home';
@@ -16,7 +16,7 @@ $white-40: #8D9BA3;
 body {
   font-family: ff-clan-web-pro, "Helvetica Neue", Helvetica, sans-serif!important;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.833;
   overflow-y: auto;
 }
 
@@ -158,4 +158,7 @@ hr.short {
 }
 .text-center {
   text-align: center;
+}
+.text-right {
+  text-align: right;
 }
