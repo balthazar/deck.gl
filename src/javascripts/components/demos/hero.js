@@ -17,7 +17,7 @@ export default class HeroDemo extends Component {
   static get data() {
     return {
       url: 'data/hero-data.txt',
-      worker: 'workers/hero-data-decoder.js'
+      worker: 'workers/hero-data-decoder.js?loop=3600&trail=180'
     };
   }
 

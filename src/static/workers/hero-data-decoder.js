@@ -2,6 +2,13 @@ var FLUSH_LIMIT = 5000;
 var LOOP_LENGTH = 3600;
 var TRAIL_LENGTH = 180;
 
+var args = location.search.match((/[^&?]+/g)) || [];
+args.forEach(function(arg) {
+  var tokens = arg.split('=');
+  if (tokens[0] === 'loop') LOOP_LENGTH = tokens[1] * 1;
+  if (tokens[0] === 'trail') TRAIL_LENGTH = tokens[1] * 1;
+});
+
 var segments;
 var result = [];
 var vertexCount = 0;

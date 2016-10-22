@@ -18,6 +18,14 @@ class Home extends Component {
   constructor(props) {
     super(props);
     this.state = {};
+    this.cameraAnimation = ViewportAnimation.fly(
+      {bearing: -45},
+      {bearing: 45},
+      29000,
+      this.props.updateMap
+    ).easing(ViewportAnimation.Easing.Sinusoidal.InOut)
+    .repeat(Infinity)
+    .yoyo(true);
   }
 
   componentDidMount() {
@@ -26,14 +34,21 @@ class Home extends Component {
     window.onresize = this._resizeMap.bind(this);
     this._onScroll();
     this._resizeMap();
-    loadData('HeroDemo', HeroDemo.data);
-    updateMap({...HeroDemo.viewport, pitch: 45});
-    this._animateCamera();
+
+    const {data, viewport} = HeroDemo;
+    loadData('Home', {
+      ...data,
+      url: 'data/hero-data-3.txt'
+    });
+
+    updateMap({...viewport, pitch: 45});
+    this.cameraAnimation.start();
   }
 
   componentWillUnmount() {
     window.onscroll = null;
     window.onresize = null;
+    this.cameraAnimation.stop();
   }
 
   _resizeMap() {
@@ -43,18 +58,6 @@ class Home extends Component {
     this.props.updateMap({width, height});
   }
 
-  _animateCamera() {
-    ViewportAnimation.fly(
-      {bearing: -90},
-      {bearing: 90},
-      29000,
-      this.props.updateMap
-    ).easing(ViewportAnimation.Easing.Sinusoidal.InOut)
-    .repeat(Infinity)
-    .yoyo(true)
-    .start();
-  }
-
   _onScroll() {
     const y = window.pageYOffset;
     this.setState({atTop: y < 168});
@@ -62,9 +65,9 @@ class Home extends Component {
 
   _renderDemo() {
     const {viewport, app: {owner, data}} = this.props;
-    const dataLoaded = owner === 'HeroDemo' ? data : null;
+    const dataLoaded = owner === 'Home' ? data : null;
 
-    return (
+    return dataLoaded && (
       <div className="hero">
         <MapGL mapboxApiAccessToken={MAPBOX_ACCESS_TOKEN}
           { ...viewport } >
