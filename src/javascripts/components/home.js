@@ -1,30 +1,79 @@
 import 'babel-polyfill';
 import React, {Component} from 'react';
+import {connect} from 'react-redux';
 
+import {HeroDemo} from './demos';
+import {loadData, updateMap} from '../actions/app-actions';
+import MapGL from 'react-map-gl';
 import Header from './header';
+
+import ViewportAnimation from '../utils/map-utils';
 import stylesheet from '../constants/styles';
+import {MAPBOX_ACCESS_TOKEN, MAPBOX_STYLES} from '../constants/defaults';
 
 const DEMO_TAB = 0;
 const CONTENT_TAB = 1;
 
-export default class Home extends Component {
+class Home extends Component {
   constructor(props) {
     super(props);
     this.state = {};
   }
 
   componentDidMount() {
+    const {loadData, updateMap} = this.props;
     window.onscroll = this._onScroll.bind(this);
+    window.onresize = this._resizeMap.bind(this);
     this._onScroll();
+    this._resizeMap();
+    loadData('HeroDemo', HeroDemo.data);
+    updateMap({...HeroDemo.viewport, pitch: 45});
+    this._animateCamera();
   }
 
   componentWillUnmount() {
     window.onscroll = null;
+    window.onresize = null;
+  }
+
+  _resizeMap() {
+    const container = this.refs.banner;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    this.props.updateMap({width, height});
+  }
+
+  _animateCamera() {
+    ViewportAnimation.fly(
+      {bearing: -90},
+      {bearing: 90},
+      29000,
+      this.props.updateMap
+    ).easing(ViewportAnimation.Easing.Sinusoidal.InOut)
+    .repeat(Infinity)
+    .yoyo(true)
+    .start();
   }
 
   _onScroll() {
     const y = window.pageYOffset;
     this.setState({atTop: y < 168});
+  }
+
+  _renderDemo() {
+    const {viewport, app: {owner, data}} = this.props;
+    const dataLoaded = owner === 'HeroDemo' ? data : null;
+
+    return (
+      <div className="hero">
+        <MapGL mapboxApiAccessToken={MAPBOX_ACCESS_TOKEN}
+          { ...viewport } >
+
+          <HeroDemo viewport={viewport} data={dataLoaded} />
+
+        </MapGL>
+      </div>
+    );
   }
 
   render() {
@@ -34,7 +83,8 @@ export default class Home extends Component {
         <style>{ stylesheet }</style>
         <Header />
 
-        <section id="banner">
+        <section ref="banner" id="banner">
+          { this._renderDemo() }
           <div className="container">
             <h1>deck.gl</h1>
             <p>Large-scale WebGL-powered Data Visualization</p>
@@ -162,3 +212,5 @@ export default class Home extends Component {
     )
   }
 }
+
+export default connect(state => state, {loadData, updateMap})(Home);

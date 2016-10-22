@@ -31,7 +31,12 @@ export function updateMap(viewport) {
 
 export function loadData(owner, {url, worker}) {
 
-  return dispatch => {
+  return (dispatch, getState) => {
+    if (getState().app.owner === owner) {
+      // already loading / loaded
+      return;
+    }
+
     dispatch(loadDataStart(owner));
     if (request) {
       var req = request(url);

@@ -2,19 +2,13 @@ import 'babel-polyfill';
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import MapGL from 'react-map-gl';
-import TWEEN from 'tween.js';
 
 import MarkdownPage from '../components/markdown-page';
 import GenericInput from './input';
 import * as Demos from './demos';
 import * as appActions from '../actions/app-actions';
+import ViewportAnimation from '../utils/map-utils';
 import {MAPBOX_ACCESS_TOKEN, MAPBOX_STYLES} from '../constants/defaults';
-
-function animate() {
-  TWEEN.update();
-  requestAnimationFrame(animate);
-}
-animate();
 
 class Page extends Component {
   constructor(props) {
@@ -38,6 +32,10 @@ class Page extends Component {
     }
   }
 
+  componentWillUnmount() {
+    window.onresize = null;
+  }
+
   _loadContent(content) {
     if (typeof content === 'string') {
       content = {content};
@@ -49,27 +47,8 @@ class Page extends Component {
     if (DemoComponent) {
       loadData(demo, DemoComponent.data);
       useParams(DemoComponent.parameters);
-
-      // fly to new viewport
-      const fromViewport = {};
-      const nanViewport = {};
-      const toViewport = DemoComponent.viewport;
-      Object.keys(toViewport).forEach(key => {
-        const v = viewport[key];
-        if (isNaN(v)) {
-          nanViewport[key] = toViewport[key];
-        } else {
-          fromViewport[key] = v;
-        }
-      });
-
-      TWEEN.removeAll();
-      new TWEEN.Tween(fromViewport)
-        .to(toViewport, 1000)
-        .easing(TWEEN.Easing.Exponential.Out)
-        .onUpdate(function() {
-          updateMap({...this, ...nanViewport});
-        })
+      ViewportAnimation.fly(viewport, DemoComponent.viewport, 1000, updateMap)
+        .easing(ViewportAnimation.Easing.Exponential.Out)
         .start();
     }
 

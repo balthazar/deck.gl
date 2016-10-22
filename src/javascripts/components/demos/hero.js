@@ -4,6 +4,7 @@ import {DeckGLOverlay} from 'deck.gl';
 import TripsLayer from './trips-layer/trips-layer';
 import {MAPBOX_STYLES} from '../../constants/defaults';
 import {readableInteger} from '../../utils/format-utils';
+import ViewportAnimation from '../../utils/map-utils';
 
 const BLENDING = {
   enable: true,
@@ -54,34 +55,28 @@ export default class HeroDemo extends Component {
 
   constructor(props) {
     super(props);
+
+    const thisDemo = this;
+
     this.state = {
       time: 0
     };
-    this._animation = null;
+    this.tween = ViewportAnimation.ease({time: 0}, {time: 3600}, 120000)
+      .onUpdate(function() { thisDemo.setState(this) })
+      .repeat(Infinity);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const {data} = nextProps;
-    if (data && data !== this.props.data) {
-      if (!this._animation) {
-        this._animate();
-      }
-    }
+  componentDidMount() {
+    const thisDemo = this;
+    this.tween.start();
   }
 
   componentWillUnmount() {
-    if (this._animation) {
-      cancelAnimationFrame(this._animation);
-    }
-  }
-
-  _animate() {
-    this.setState({time: (this.state.time + 1) % 3600});
-    this._animation = requestAnimationFrame(this._animate.bind(this));
+    this.tween.stop();
   }
 
   render() {
-    const {viewport, params, data} = this.props;
+    const {viewport, data} = this.props;
 
     if (!data) {
       return null;

@@ -47,6 +47,14 @@
   background-position: center;
   color: $white;
 
+  >.hero {
+    position: absolute;
+    top: 0;
+  }
+  >.container {
+    position: relative;
+  }
+
   p {
     font-size: 16px;
     color: $white-40;

@@ -5,9 +5,6 @@ export default function appReducer(state = DEFAULT_APP_STATE, action) {
   switch (action.type) {
 
   case 'LOAD_DATA_START':
-    if (action.owner === state.owner) {
-      return state;
-    }
     return {...state,
       owner: action.owner,
       meta: {},
