@@ -1,8 +1,9 @@
 import 'babel-polyfill';
 import React, {Component} from 'react';
-import {DeckGLOverlay, ArcLayer} from 'deck.gl';
+import {DeckGLOverlay, ChoroplethLayer, ArcLayer} from 'deck.gl';
 import {scaleQuantile} from 'd3-scale';
 
+import {readableInteger} from '../../utils/format-utils';
 import {MAPBOX_STYLES} from '../../constants/defaults';
 
 const inFlowColors = [
@@ -25,10 +26,13 @@ const outFlowColors = [
   [177,0,38],
 ];
 
+const colorRamp = inFlowColors.slice().reverse().concat(outFlowColors)
+  .map(color => `rgb(${color.join(',')})`);
+
 export default class ArcDemo extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = this._updateFlows(props);
   }
 
   static get data() {
@@ -58,9 +62,29 @@ export default class ArcDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <h3>United States County-to-county Migration 2009-2013</h3>
-        <p>Arcs show migration flows from county to county</p>
-        <div className="stat">Arcs<b>{ meta.count || 0 }</b></div>
+        <h3>United States County-to-county Migration</h3>
+        <p>People moving in and out of <b>{meta.sourceName}</b> between 2009-2013</p>
+
+        <p>
+          <div className="layout">
+            {colorRamp.map((c, i) => (
+                <div key={i} className="legend" style={{background: c, width: `${100 / colorRamp.length}%`}} />
+              ))}
+          </div>
+          <div className="layout">
+            <div className="col-1-2">Net gain</div>
+            <div className="col-1-2 text-right">Net loss</div>
+          </div>
+        </p>
+
+        <div className="layout">
+          <div className="stat col-1-2">
+            Counties<b>{ meta.count || 0 }</b>
+          </div>
+          <div className="stat col-1-2">
+            Arcs<b>{ readableInteger(meta.flowCount || 0) }</b>
+          </div>
+        </div>
       </div>
     );
   }
@@ -68,15 +92,38 @@ export default class ArcDemo extends Component {
   componentWillReceiveProps(nextProps) {
     const {data} = nextProps;
     if (data && data !== this.props.data) {
-      this._computeQuantile(data);
+      this.setState(this._updateFlows(nextProps));
     }
   }
 
-  _computeQuantile(data) {
+  _updateFlows(props, selectedFeature) {
+    const {data} = props;
+
+    if (!data || !data.length) {
+      return {};
+    }
+    const {features} = data[0];
+    selectedFeature = selectedFeature || features[362];
+
+    const {flows, centroid, name} = selectedFeature.properties;
+    const arcs = [];
+
+    for (let toId in flows) {
+      const f = features[toId];
+      arcs.push({
+        source: centroid,
+        target: f.properties.centroid,
+        value: flows[toId]
+      });
+    }
+
     const scale = scaleQuantile()
-      .domain(data.map(d => d.weight))
+      .domain(arcs.map(a => a.value))
       .range(inFlowColors.map((c, i) => i));
-    this.setState({scale});
+
+    this.props.onStateChange({sourceName: name});
+
+    return {arcs, scale, selectedFeature};
   }
 
   _initialize(gl) {
@@ -84,31 +131,54 @@ export default class ArcDemo extends Component {
     gl.depthFunc(gl.LEQUAL);
   }
 
+  _onClickFeature(evt) {
+    const {feature} = evt;
+    if (this.state.selectedFeature !== feature) {
+      this.setState(this._updateFlows(this.props, feature));
+    }
+  }
+
   render() {
     const {viewport, params, data} = this.props;
-    const {scale} = this.state;
+    const {scale, arcs, selectedFeature} = this.state;
 
     if (!data) {
       return null;
     }
 
-    const layer = new ArcLayer({
-      id: 'arc',
-      ...viewport,
-      data: data,
-      getSourcePosition: d => d.source,
-      getTargetPosition: d => d.target,
-      getSourceColor: d => inFlowColors[scale(d.weight)],
-      getTargetColor: d => outFlowColors[scale(d.weight)],
-      strokeWidth: params.lineWidth.value,
-      updateTriggers: {
-        // instanceColors: {color: params.lineWidth.value}
-      },
-      isPickable: true
-    });
+    const layers = [
+      new ChoroplethLayer({
+        id: 'choropleth',
+        ...viewport,
+        data: data[0],
+        opacity: 0,
+        getColor: () => [255, 255, 255],
+        onClick: this._onClickFeature.bind(this),
+        isPickable: true
+      }),
+      new ChoroplethLayer({
+        id: 'selected-choropleth',
+        ...viewport,
+        data: {type: 'FeatureCollection', features: [selectedFeature]},
+        drawContour: true,
+        strokeWidth: 4,
+        opacity: 0.2,
+        getColor: () => [0, 0, 0]
+      }),
+      new ArcLayer({
+        id: 'arc',
+        ...viewport,
+        data: arcs,
+        getSourcePosition: d => d.source,
+        getTargetPosition: d => d.target,
+        getSourceColor: d => inFlowColors[scale(d.value)],
+        getTargetColor: d => outFlowColors[scale(d.value)],
+        strokeWidth: params.lineWidth.value
+      })
+    ];
 
     return (
-      <DeckGLOverlay {...viewport} layers={ [layer] }
+      <DeckGLOverlay {...viewport} layers={ layers }
         onWebGLInitialized={this._initialize} />
     );
   }

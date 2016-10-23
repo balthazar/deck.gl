@@ -1,3 +1,4 @@
+importScripts('./util.js');
 var COORDINATE_PRECISION = 5;
 
 onmessage = function(e) {
@@ -18,22 +19,7 @@ onmessage = function(e) {
 
 function decodeCoords(str) {
   var multiplyer = Math.pow(10, COORDINATE_PRECISION);
-  return decodeBase(str, 90, 32, 4).map(function(x) {
+  return decodeNumberArr(str, 90, 32, 4).map(function(x) {
     return x / multiplyer - 180;
   });
-}
-
-function decodeBase(str, b, shift, length) {
-  var result = [];
-  for (var j = 0; j < str.length; j += length) {
-    var token = str.slice(j, j + length);
-    var x = 0;
-    var p = 1;
-    for (var i = token.length; i--; ) {
-      x += (token.charCodeAt(i) - shift) * p;
-      p *= b;
-    }
-    result.push(x);
-  }
-  return result;
 }

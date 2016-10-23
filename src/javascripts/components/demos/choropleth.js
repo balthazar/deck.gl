@@ -1,29 +1,21 @@
 import 'babel-polyfill';
 import React, {Component} from 'react';
 import {DeckGLOverlay, ChoroplethLayer} from 'deck.gl';
-import {scaleQuantile} from 'd3-scale';
 
+import {readableInteger} from '../../utils/format-utils';
 import {MAPBOX_STYLES} from '../../constants/defaults';
 
-const inFlowColors = [
-  [255, 255, 204],
-  [199, 233, 180],
-  [127, 205, 187],
-  [65, 182, 196],
-  [29, 145, 192],
-  [34, 94, 168],
-  [12, 44, 132],
+const COLORS = [
+  [153,213,148],
+  [254,224,139],
+  [213,62,79]
 ];
 
-const outFlowColors = [
-  [255,255,178],
-  [254,217,118],
-  [254,178,76],
-  [253,141,60],
-  [252,78,42],
-  [227,26,28],
-  [177,0,38],
-];
+const TYPES = [
+  'Residential',
+  'Public',
+  'Commercial'
+]
 
 export default class ChoroplethDemo extends Component {
   constructor(props) {
@@ -33,7 +25,7 @@ export default class ChoroplethDemo extends Component {
 
   static get data() {
     return {
-      url: 'data/choropleth-data.json',
+      url: 'data/choropleth-data.txt',
       worker: 'workers/choropleth-data-decoder.js'
     };
   }
@@ -45,9 +37,9 @@ export default class ChoroplethDemo extends Component {
   static get viewport() {
     return {
       mapStyle: MAPBOX_STYLES.LIGHT,
-      longitude: -100,
-      latitude: 40.7,
-      zoom: 3,
+      longitude: 139.741,
+      latitude: 35.686,
+      zoom: 14,
       pitch: 0,
       bearing: 0
     };
@@ -56,90 +48,45 @@ export default class ChoroplethDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <h3>United States County-to-county Migration 2009-2013</h3>
-        <p>Color show net gain/loss of population</p>
-        <div className="stat">Choropleths<b>{ meta.count || 0 }</b></div>
+        <h3>Building Types In Tokyo</h3>
+        <p>
+        {
+          COLORS.map((c, i) => (
+            <div key={i}>
+              <div className="legend" style={{marginRight: '12px', background: `rgb(${c.join(',')})`}} />
+              { TYPES[i] }
+            </div>
+          ))
+        }
+        </p>
+        <div className="layout">
+          <div className="stat col-1-2">
+            Buildings<b>{ readableInteger(meta.count) || 0 }</b>
+          </div>
+          <div className="stat col-1-2">
+            Vertices<b>{ readableInteger(meta.vertexCount || 0) }</b>
+          </div>
+        </div>
       </div>
     );
   }
 
-  componentWillReceiveProps(nextProps) {
-    const {data} = nextProps;
-    if (data && data !== this.props.data) {
-      const scale = this._computeQuantile(data, null);
-      this.setState({scale});
-    }
-  }
-
-  _computeQuantile(data, hoveredFeature) {
-    if (!data || !data.length) {
-      return;
-    }
-
-    const values = data[0].features.map((f, i) => {
-      const value = hoveredFeature ? -hoveredFeature.properties.flows[i] :
-        f.properties.netFlow;
-      f.properties.value = value;
-      return Math.abs(value);
-    });
-
-    const scale = scaleQuantile()
-      .domain(values)
-      .range(inFlowColors.map((c, i) => i));
-
-    return scale;
-  }
-
-  _initialize(gl) {
-    gl.enable(gl.DEPTH_TEST);
-    gl.depthFunc(gl.LEQUAL);
-  }
-
-  _onHoverFeature(evt) {
-    const {data} = this.props;
-    const {feature} = evt;
-
-    if (this.state.hoveredFeature === feature) {
-      return;
-    }
-
-    this.setState({
-      hoveredFeature: feature,
-      scale: this._computeQuantile(data, feature)
-    });
-  }
-
   render() {
     const {viewport, params, data} = this.props;
-    const {scale, hoveredFeature} = this.state;
 
     if (!data) {
       return null;
     }
 
-    const layer = new ChoroplethLayer({
-      id: 'choropleth',
+    const layers = data.map((d, i) => new ChoroplethLayer({
+      id: `buildings-${i}`,
       ...viewport,
-      data: data[0],
-      getColor: f => {
-        if (f === hoveredFeature) {
-          return [255, 255, 255];
-        }
-
-        const {value} = f.properties;
-        const q = isNaN(value) ? 0 : scale(Math.abs(value));
-        return value > 0 ? inFlowColors[q] : outFlowColors[q];
-      },
-      updateTriggers: {
-        colors: hoveredFeature
-      },
-      onHover: this._onHoverFeature.bind(this),
-      isPickable: true
-    });
+      data: d,
+      getColor: f => COLORS[f.properties.value]
+    }));
 
     return (
-      <DeckGLOverlay {...viewport} layers={ [layer] }
-        onWebGLInitialized={this._initialize} />
+      <DeckGLOverlay {...viewport} layers={ layers } />
     );
   }
 }

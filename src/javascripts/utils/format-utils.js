@@ -20,6 +20,9 @@ export function normalizeParam(p) {
 }
 
 export function readableInteger(x) {
+  if (!x) {
+    return 0;
+  }
   if (x < 1000) {
     return x.toString();
   }

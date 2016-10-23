@@ -120,7 +120,7 @@ hr.short {
   width: 100%;
 
   >div {
-    display: table-cell;
+    display: table-cell !important;
   }
   >div:not(:first-child) {
     margin-left: 48px;

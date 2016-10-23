@@ -1,3 +1,4 @@
+importScripts('./util.js');
 var FLUSH_LIMIT = 100000;
 var COORDINATE_PRECISION = 7;
 var sequence;
@@ -55,7 +56,7 @@ function decodeSequence(str) {
 
 function decodeBbox(str) {
   var multiplyer = Math.pow(10, COORDINATE_PRECISION);
-  return decodeBase(str, 90, 32, 5).map(function(x) {
+  return decodeNumberArr(str, 90, 32, 5).map(function(x) {
     return x / multiplyer - 180;
   });
 }
@@ -71,19 +72,4 @@ function decodeBitmap(str) {
     match += seg;
   }
   return match;
-}
-
-function decodeBase(str, b, shift, length) {
-  var result = [];
-  for (var j = 0; j < str.length; j += length) {
-    var token = str.slice(j, j + length);
-    var x = 0;
-    var p = 1;
-    for (var i = token.length; i--; ) {
-      x += (token.charCodeAt(i) - shift) * p;
-      p *= b;
-    }
-    result.push(x);
-  }
-  return result;
 }

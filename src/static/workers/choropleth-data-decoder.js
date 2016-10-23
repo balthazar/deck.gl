@@ -1,58 +1,59 @@
-importScripts('https://d3js.org/topojson.v1.min.js');
-var jsonText = '';
+importScripts('./util.js');
+var FLUSH_LIMIT = 6000;
+var result = [];
+var count = 0;
+var vertexCount = 0;
 
 onmessage = function(e) {
-  jsonText += e.data.text;
+  var lines = e.data.text.split('\n');
+
+  lines.forEach(function(line) {
+    if (!line) return;
+
+    var feature = {
+      type: 'Feature',
+      geometry: {
+        type: 'MultiPolygon',
+        coordinates: line.slice(1).split('\x01').map(function(str) {
+          var coords = decodePolyline(str);
+          vertexCount += coords.length;
+          return [coords];
+        })
+      },
+      properties: {
+        value: line[0] * 1
+      }
+    };
+
+    result.push(feature);
+    count++;
+
+    if (result.length >= FLUSH_LIMIT) {
+      flush();
+    }
+  });
 
   if (e.data.event === 'load') {
-    var data = JSON.parse(jsonText);
-    var choropleths = topojson.feature(data, data.objects.flows);
-    var features = choropleths.features;
-
-    features.forEach(function(f, i) {
-      f.properties.flows = decodeLinks(f.properties.flows);
-    });
-    features.forEach(function(f, i) {
-      var flows = f.properties.flows;
-      for (var toId in flows) {
-        features[toId].properties.flows[i] = -flows[toId];
-      }
-    });
-    features.forEach(function(f, i) {
-      var flows = f.properties.flows;
-      var netFlow = 0;
-      for (var toId in flows) {
-        netFlow += flows[toId];
-      }
-      f.properties.netFlow = netFlow;
-    });
-
-    postMessage({
-      action: 'add',
-      data: [choropleths],
-      meta: {count: features.length}
-    });
+    flush();
     postMessage({action: 'end'});
   }
 };
 
-function decodeLinks(str) {
-  var links = {};
-  var tokens = str.split(/([\x28-\x5b]+)/);
-  for (var i = 0; i < tokens.length - 1; i += 2) {
-    var index = decodeBase(tokens[i], 32, 93);
-    var flow = decodeBase(tokens[i + 1], 52, 40);
-    links[index] = flow;
-  }
-  return links;
+function flush() {
+  postMessage({
+    action: 'add',
+    data: [{
+      type: 'FeatureCollection',
+      features: result
+    }],
+    meta: {count: count, vertexCount: vertexCount}
+  });
+  result = [];
 }
 
-function decodeBase(str, b, shift) {
-  var x = 0;
-  var p = 1;
-  for (var i = str.length; i--; ) {
-    x += (str.charCodeAt(i) - shift) * p;
-    p *= b;
-  }
-  return x;
+function decodeCoords(str) {
+  var multiplyer = Math.pow(10, COORDINATE_PRECISION);
+  return decodeNumberArr(str, 90, 32, 4).map(function(x) {
+    return x / multiplyer - 180;
+  });
 }

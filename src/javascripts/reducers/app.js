@@ -17,6 +17,9 @@ export default function appReducer(state = DEFAULT_APP_STATE, action) {
     }
     return {...state, ...action.payload};
 
+  case 'UPDATE_META':
+    return {...state, meta: {...state.meta, ...action.meta}};
+
   case 'USE_PARAMS': {
     const params = {};
     for (var name in action.params) {

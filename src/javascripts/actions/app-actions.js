@@ -63,6 +63,10 @@ function loadDataSuccess(owner, data, meta) {
   };
 }
 
+export function updateMeta(meta) {
+  return {type: 'UPDATE_META', meta};
+}
+
 export function updateParam(name, value) {
   return {type: 'UPDATE_PARAM', payload: {name, value}};
 }

@@ -71,7 +71,7 @@ class Page extends Component {
   }
 
   _renderMap() {
-    const {viewport, app: {params, owner, data}} = this.props;
+    const {viewport, app: {params, owner, data}, updateMeta} = this.props;
     const {tabs: {demo}} = this.state;
     const DemoComponent = Demos[demo];
     const dataLoaded = owner === demo ? data : null;
@@ -83,7 +83,8 @@ class Page extends Component {
         { ...viewport }
         onChangeViewport={ this.props.updateMap }>
 
-        <DemoComponent viewport={viewport} params={params}
+        <DemoComponent ref="demo" viewport={viewport} params={params}
+          onStateChange={updateMeta}
           data={dataLoaded} />
 
       </MapGL>

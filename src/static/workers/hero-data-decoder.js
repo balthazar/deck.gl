@@ -1,3 +1,5 @@
+importScripts('./util.js');
+
 var FLUSH_LIMIT = 5000;
 var LOOP_LENGTH = 3600;
 var TRAIL_LENGTH = 180;
@@ -38,25 +40,25 @@ onmessage = function(e) {
       }
 
       if (result.length >= FLUSH_LIMIT) {
-        postMessage({
-          action: 'add',
-          data: [result],
-          meta: {trips: tripsCount, vertices: vertexCount}
-        });
-        result = [];
+        flush();
       }
     }
   });
 
   if (e.data.event === 'load') {
-    postMessage({
-      action: 'add',
-      data: [result],
-      meta: {trips: tripsCount, vertices: vertexCount}
-    });
+    flush();
     postMessage({action: 'end'});
   }
 };
+
+function flush() {
+  postMessage({
+    action: 'add',
+    data: [result],
+    meta: {trips: tripsCount, vertices: vertexCount}
+  });
+  result = [];
+}
 
 function shiftTrip(trip, offset) {
   var cutoffIndex = 0;
@@ -75,9 +77,9 @@ function shiftTrip(trip, offset) {
 }
 
 function decodeTrip(str, segments) {
-  var vendor = decodeBase(str.slice(0, 1), 90, 32)
-  var startTime = decodeBase(str.slice(1, 3), 90, 32);
-  var endTime = decodeBase(str.slice(3, 5), 90, 32);
+  var vendor = decodeNumber(str.slice(0, 1), 90, 32)
+  var startTime = decodeNumber(str.slice(1, 3), 90, 32);
+  var endTime = decodeNumber(str.slice(3, 5), 90, 32);
   var segs = decodeSegmentsArray(str.slice(5), segments);
 
   var projectedTimes = segs.reduce(function(acc, seg, i) {
@@ -108,7 +110,7 @@ function decodeSegmentsArray(str, segments) {
 
   for(var i = 1; i < tokens.length - 1; i += 2) {
     var segIndexStr = String.fromCharCode(tokens[i].charCodeAt(0) + 45) + tokens[i + 1];
-    var segIndex = decodeBase(segIndexStr, 45, 77);
+    var segIndex = decodeNumber(segIndexStr, 45, 77);
     segs.push(segments[segIndex]);
   }
   return segs;
@@ -118,7 +120,7 @@ function decodeSegments(str) {
   var tokens = str.split(/([\x3e-\xff]+)/);
   var result = [];
   for (var i = 0; i < tokens.length - 1; i += 2) {
-    var T = decodeBase(tokens[i], 30, 32);
+    var T = decodeNumber(tokens[i], 30, 32);
     var coords = decodePolyline(tokens[i + 1]);
 
     var distances = coords.reduce(function(acc, c, j) {
@@ -136,78 +138,6 @@ function decodeSegments(str) {
   }
   return result;
 }
-
-function decodeBase(str, b, shift) {
-  var x = 0;
-  var p = 1;
-  for (var i = str.length; i--; ) {
-    x += (str.charCodeAt(i) - shift) * p;
-    p *= b;
-  }
-  return x;
-}
-
-/**
- * https://github.com/mapbox/polyline
- *
- * Decodes to a [latitude, longitude] coordinates array.
- *
- * This is adapted from the implementation in Project-OSRM.
- *
- * @param {String} str
- * @param {Number} precision
- * @returns {Array}
- *
- * @see https://github.com/Project-OSRM/osrm-frontend/blob/master/WebContent/routing/OSRM.RoutingGeometry.js
- */
-function decodePolyline(str, precision) {
-    var index = 0,
-        lat = 0,
-        lng = 0,
-        coordinates = [],
-        shift = 0,
-        result = 0,
-        byte = null,
-        latitude_change,
-        longitude_change,
-        factor = Math.pow(10, precision || 5);
-
-    // Coordinates have variable length when encoded, so just keep
-    // track of whether we've hit the end of the string. In each
-    // loop iteration, a single coordinate is decoded.
-    while (index < str.length) {
-
-        // Reset shift, result, and byte
-        byte = null;
-        shift = 0;
-        result = 0;
-
-        do {
-            byte = str.charCodeAt(index++) - 63;
-            result |= (byte & 0x1f) << shift;
-            shift += 5;
-        } while (byte >= 0x20);
-
-        latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-
-        shift = result = 0;
-
-        do {
-            byte = str.charCodeAt(index++) - 63;
-            result |= (byte & 0x1f) << shift;
-            shift += 5;
-        } while (byte >= 0x20);
-
-        longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
-
-        lat += latitude_change;
-        lng += longitude_change;
-
-        coordinates.push([lng / factor, lat / factor]);
-    }
-
-    return coordinates;
-};
 
 /*
 * adapted from turf-distance http://turfjs.org
