@@ -51,7 +51,7 @@ export default class HexagonLayer extends Layer {
    */
   constructor({
     vertices,
-    dotRadius = 10,
+    dotRadius = 0.1,
     elevation = 100,
     enable3d = false,
     opacity = 0.6,

@@ -53,21 +53,15 @@ const vec3 pointSpecularColor = vec3(0.6, 0.6, 0.6);
 const float shininess = 5.;
 
 void main(void) {
-
   mat2 rotationMatrix = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-  vec4 rotatedPosition = vec4(vec2(rotationMatrix * positions.xz * radius), 0., 1.);
-
-  vec2 pos = project_position(instancePositions.xy);
-
-  vec4 centroidPosition = vec4(
-    pos.xy,
-    project_scale(instanceElevations * (positions.y + 0.5)) + 1.,
-    0.
+  vec3 rotatedPosition = project_scale(
+    vec3(rotationMatrix * positions.xz * radius, positions.y)
   );
 
-  vec3 p = project_position(centroidPosition.xyz + rotatedPosition.xyz);
-
-  gl_Position = project_to_clipspace(projectionMatrix * vec4(p, 1.));
+  vec3 pos = project_position(
+    vec3(instancePositions.xy, 0.) + rotatedPosition
+  );
+  gl_Position = project_to_clipspace(vec4(pos, 1.));
 
   vec4 color = vec4(instanceColors.rgb, instanceColors.a * opacity) / 255.;
   vec4 pickingColor = vec4(instancePickingColors / 255., 1.);

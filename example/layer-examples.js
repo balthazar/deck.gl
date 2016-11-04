@@ -83,7 +83,7 @@ const HexagonLayerExample = props =>
     data: props.hexData,
     elevation: 200,
     opacity: 0.5
-  })
+  });
 
 const METER_PLOT = [
   {position: [0, 0], radius: 1},
