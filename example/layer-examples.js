@@ -3,7 +3,8 @@ import {
   ScatterplotLayer,
   ArcLayer,
   LineLayer,
-  ScreenGridLayer
+  ScreenGridLayer,
+  HexagonLayer
 } from '../src';
 
 import {
@@ -75,6 +76,14 @@ const ScatterplotLayerExample = props =>
     onHover: props.onScatterplotHovered,
     onClick: props.onScatterplotClicked
   });
+
+const HexagonLayerExample = props =>
+  new HexagonLayer({
+    ...props,
+    data: props.hexData,
+    elevation: 200,
+    opacity: 0.5
+  })
 
 const METER_PLOT = [
   {position: [0, 0], radius: 1},
@@ -258,7 +267,8 @@ export default {
     LineLayer: LineLayerExample,
     ScatterplotLayer: ScatterplotLayerExample,
     'ScatterplotLayer (meters)': ScatterplotLayerMetersExample,
-    ScreenGridLayer: ScreenGridLayerExample
+    ScreenGridLayer: ScreenGridLayerExample,
+    HexagonLayer: HexagonLayerExample
   },
 
   '64-bit Layers': {
